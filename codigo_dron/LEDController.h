@@ -8,7 +8,7 @@ private:
     static const uint8_t MAX_LEDS = 8;  // Máximo número de LEDs soportados
     
     // Array de pines por defecto
-    static const uint8_t DEFAULT_PINS[MAX_LEDS];
+    static constexpr uint8_t DEFAULT_PINS[MAX_LEDS] = {2, 3, 5, 6, 21, 8, 45, 42};
     
     uint8_t* LEDPins;         // Array dinámico para los pines de LED
     uint8_t NumberOfLEDs;     // Número actual de LEDs
@@ -49,8 +49,5 @@ public:
     uint8_t GetCurrentLED() const { return CurrentLED; }
     uint8_t GetNumberOfLEDs() const { return NumberOfLEDs; }
 };
-
-// Definición de los pines por defecto
-const uint8_t LEDController::DEFAULT_PINS[MAX_LEDS] = {2, 3, 5, 6, 21, 8, 45, 42};
 
 #endif

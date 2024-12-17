@@ -9,8 +9,8 @@ private:
     static const uint8_t MAX_SENSORS = 6;
     
     // Default configuration constants
-    static const uint8_t DEFAULT_I2C_ADDRESSES[MAX_SENSORS];
-    static const uint8_t DEFAULT_XSHUT_PINS[MAX_SENSORS];
+    static constexpr uint8_t DEFAULT_I2C_ADDRESSES[MAX_SENSORS] = {0x34, 0x31, 0x32, 0x33, 0x35, 0x36};
+    static constexpr uint8_t DEFAULT_XSHUT_PINS[MAX_SENSORS] = {17, 18, 35, 37, 41, 43};
     static const uint8_t RANGE_OK_STATUS = 6;
     
     struct SensorData {
@@ -64,9 +64,5 @@ public:
     // Método de diagnóstico
     bool PerformDiagnostics();
 };
-
-// Define the static const arrays outside the class
-const uint8_t VL53L0XSensorArray::DEFAULT_I2C_ADDRESSES[MAX_SENSORS] = {0x34, 0x31, 0x32, 0x33, 0x35, 0x36};
-const uint8_t VL53L0XSensorArray::DEFAULT_XSHUT_PINS[MAX_SENSORS] = {17, 18, 35, 37, 41, 43};
 
 #endif
