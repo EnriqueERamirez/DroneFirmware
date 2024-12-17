@@ -4,7 +4,8 @@ DistanceController::DistanceController()
     : UpperSensorDistance(0), LowerSensorDistance(0),
       LeftSensorDistance(0), RightSensorDistance(0),
       FrontSensorDistance(0), BackSensorDistance(0),
-      Throttle(0), RollTarget(0), PitchTarget(0), HeightOutput(0) {
+      Throttle(0), RollTarget(0), PitchTarget(0), 
+      HeightOutput(0), HeightTarget(0) {  // Inicializado HeightTarget
 }
 
 void DistanceController::SetSensorDistances(uint16_t upper, uint16_t lower, 

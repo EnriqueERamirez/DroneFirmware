@@ -85,7 +85,10 @@ private:
     float GyroYPrev;
     float GyroZPrev;
     float Setpoint;
-    float SetpointAltitude;
+    float PitchSetpoint;
+    float RollSetpoint;
+    float YawSetpoint; 
+    float AltitudeSetpoint;
     float LowerSensor;
     float LowerSensorPrev;
 
@@ -103,7 +106,7 @@ public:
     void SetAngles(float angleX, float angleY);
     void SetGyros(float gyroX, float gyroY, float gyroZ);
     void SetAltitude(float altitude);
-    void SetSetpoints(float yawSetpoint, float altitudeSetpoint);
+    void SetSetpoints(float rollTarget, float pitchTarget, float yawTarget);
 };
 
 #endif

@@ -5,48 +5,47 @@
 
 class MotorsController {
 private:
-    // Configuración de PWM
-    static const uint8_t PWM_CHANNELS = 4;
+    // PWM Configuration
     static const uint32_t PWM_FREQUENCY = 2000;
     static const uint8_t PWM_RESOLUTION = 10;
     
-    // Pines de los motores
+    // Motor pins
     uint8_t Motor1Pin;
     uint8_t Motor2Pin;
     uint8_t Motor3Pin;
     uint8_t Motor4Pin;
     
-    // Variables de control
+    // Control variables
     uint16_t Throttle;
     uint16_t SpeedLimit;
     bool RCState;
     bool HeightPIDEnabled;
     
-    // Velocidades de los motores
+    // Motor speeds
     uint16_t Motor1Speed;
     uint16_t Motor2Speed;
     uint16_t Motor3Speed;
     uint16_t Motor4Speed;
     
-    // Control PID
+    // PID Control
     float RollOutput;
     float PitchOutput;
     float YawOutput;
     
-    // Métodos privados
+    // Private methods
     void UpdateMotorSpeeds();
     void ApplyMotorSpeeds();
     
 public:
     MotorsController(uint8_t motor1Pin, uint8_t motor2Pin, uint8_t motor3Pin, uint8_t motor4Pin);
     
-    // Métodos de configuración
+    // Configuration methods
     void Initialize();
     void SetSpeedLimit(uint16_t limit) { SpeedLimit = limit; }
     void SetRCState(bool state) { RCState = state; }
     void SetHeightPIDState(bool state) { HeightPIDEnabled = state; }
     
-    // Métodos de control
+    // Control methods
     void SetThrottle(uint16_t value);
     void SetPIDOutputs(float roll, float pitch, float yaw);
     void UpdateMotors();

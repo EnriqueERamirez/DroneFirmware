@@ -8,25 +8,29 @@ MotorsController::MotorsController(uint8_t motor1Pin, uint8_t motor2Pin, uint8_t
 }
 
 void MotorsController::Initialize() {
-    // Configurar canales PWM
-    for (int channel = 0; channel < PWM_CHANNELS; ++channel) {
-        ledcSetup(channel, PWM_FREQUENCY, PWM_RESOLUTION);
+    // Initialize LEDC for each motor using the new API
+    // The channel parameter is removed as it's now automatically managed
+    if (!ledcAttach(Motor1Pin, PWM_FREQUENCY, PWM_RESOLUTION)) {
+        Serial.println("Failed to initialize Motor 1");
     }
-    
-    // Asignar pines a canales
-    ledcAttachPin(Motor1Pin, 39);
-    ledcAttachPin(Motor2Pin, 4);
-    ledcAttachPin(Motor3Pin, 14);
-    ledcAttachPin(Motor4Pin, 47);
+    if (!ledcAttach(Motor2Pin, PWM_FREQUENCY, PWM_RESOLUTION)) {
+        Serial.println("Failed to initialize Motor 2");
+    }
+    if (!ledcAttach(Motor3Pin, PWM_FREQUENCY, PWM_RESOLUTION)) {
+        Serial.println("Failed to initialize Motor 3");
+    }
+    if (!ledcAttach(Motor4Pin, PWM_FREQUENCY, PWM_RESOLUTION)) {
+        Serial.println("Failed to initialize Motor 4");
+    }
 }
 
 void MotorsController::SetThrottle(uint16_t value) {
     if (RCState) {
-        // Mapear y limitar el throttle para control RC
+        // Map and limit throttle for RC control
         Throttle = map(value, 50, 1024, 0, SpeedLimit);
         Throttle = constrain(Throttle, 0, SpeedLimit);
     } else {
-        // Modo autónomo - el valor se usa directamente
+        // Autonomous mode - value used directly
         Throttle = constrain(value, 0, SpeedLimit);
     }
 }
@@ -46,7 +50,7 @@ void MotorsController::UpdateMotorSpeeds() {
         return;
     }
     
-    // Calcular velocidades de los motores con compensación PID
+    // Calculate motor speeds with PID compensation
     // FR - Front Right
     Motor1Speed = constrain(Throttle - RollOutput + PitchOutput - YawOutput, 0, SpeedLimit);
     
@@ -61,10 +65,11 @@ void MotorsController::UpdateMotorSpeeds() {
 }
 
 void MotorsController::ApplyMotorSpeeds() {
-    ledcWrite(0, Motor1Speed);
-    ledcWrite(1, Motor2Speed);
-    ledcWrite(2, Motor3Speed);
-    ledcWrite(3, Motor4Speed);
+    // Use ledcWrite with pin instead of channel
+    ledcWrite(Motor1Pin, Motor1Speed);
+    ledcWrite(Motor2Pin, Motor2Speed);
+    ledcWrite(Motor3Pin, Motor3Speed);
+    ledcWrite(Motor4Pin, Motor4Speed);
 }
 
 void MotorsController::UpdateMotors() {

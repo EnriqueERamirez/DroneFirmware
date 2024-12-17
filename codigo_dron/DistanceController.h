@@ -24,6 +24,7 @@ private:
     float RollTarget;
     float PitchTarget;
     float HeightOutput;
+    float HeightTarget;  
     
     // Parámetros de ajuste
     const float EMERGENCY_DESCENT_RATE = 80.0f;
@@ -43,11 +44,13 @@ public:
     // Setters
     void SetThrottle(float throttle) { Throttle = throttle; }
     void SetHeightOutput(float output) { HeightOutput = output; }
+    void SetHeightTarget(float target) { HeightTarget = target; } 
     
     // Getters
     float GetThrottle() const { return Throttle; }
     float GetRollTarget() const { return RollTarget; }
     float GetPitchTarget() const { return PitchTarget; }
+    float GetHeightTarget() const { return HeightTarget; }
     
     // Métodos de estado
     bool IsUpperObstacleDetected() const { return UpperSensorDistance <= UPPER_THRESHOLD; }

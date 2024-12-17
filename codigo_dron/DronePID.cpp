@@ -1,4 +1,4 @@
-/ DronePID.cpp
+
 #include "DronePID.h"
 #include <Arduino.h>
 
@@ -18,17 +18,20 @@ DronePID::DronePID() :
     // Límites
     PIDLimit1(300.0f), PIDLimit2(430.0f),
     PIDLimit1V(300.0f), PIDLimit2V(430.0f),
-    PIDLimit1Altitude(200.0f), PIDLimit2Altitude(1000.0f)
+    PIDLimit1Altitude(200.0f), PIDLimit2Altitude(1000.0f),
+
+    // Altitud
+    AltitudeSetpoint(200.0f)
 {
     // Inicialización de variables
     PitchI = RollI = PitchIV = RollIV = YawIV = AltitudeI = 0.0f;
-    Setpoint = 0.0f;  // Setpoint YAW
-    SetpointAltitude = 200.0f;  // 200mm altura inicial
+    Setpoint = 0.0f; 
+    PitchSetpoint = RollSetpoint = YawSetpoint = 0.0f;
 }
 
 void DronePID::UpdateAnglePID() {
     // PID Pitch (ángulo)
-    PitchError = -AngleX;
+    PitchError = PitchSetpoint - AngleX;
     PitchP = PitchKp * PitchError;
     PitchI += PitchKi * PitchError;
     PitchI = constrain(PitchI, -PIDLimit1, PIDLimit1);
@@ -37,7 +40,7 @@ void DronePID::UpdateAnglePID() {
     PitchOut = constrain(PitchOut, -PIDLimit2, PIDLimit2);
 
     // PID Roll (ángulo)
-    RollError = -AngleY;
+    RollError = RollSetpoint - AngleY;
     RollP = RollKp * RollError;
     RollI += RollKi * RollError;
     RollI = constrain(RollI, -PIDLimit1, PIDLimit1);
@@ -69,7 +72,7 @@ void DronePID::UpdateAngularVelocityPID() {
     RollOutV = constrain(RollOutV, -PIDLimit2V, PIDLimit2V);
 
     // PID Yaw (velocidad angular)
-    YawErrorV = Setpoint - GyroZ;
+    YawErrorV = YawSetpoint - GyroZ;
     YawPV = YawKpV * YawErrorV;
     YawIV += YawKiV * YawErrorV;
     YawIV = constrain(YawIV, -PIDLimit1V, PIDLimit1V);
@@ -83,7 +86,7 @@ void DronePID::UpdateAngularVelocityPID() {
 }
 
 void DronePID::UpdateAltitudePID() {
-    AltitudeError = SetpointAltitude - LowerSensor;
+    AltitudeError = AltitudeSetpoint - LowerSensor; 
     AltitudeP = AltitudeKp * AltitudeError;
     AltitudeI += AltitudeKi * AltitudeError;
     AltitudeI = constrain(AltitudeI, -PIDLimit1Altitude, PIDLimit1Altitude);
@@ -109,7 +112,8 @@ void DronePID::SetAltitude(float altitude) {
     LowerSensor = altitude;
 }
 
-void DronePID::SetSetpoints(float yawSetpoint, float altitudeSetpoint) {
-    Setpoint = yawSetpoint;
-    SetpointAltitude = altitudeSetpoint;
+void DronePID::SetSetpoints(float rollTarget, float pitchTarget, float yawTarget) {
+    RollSetpoint = rollTarget;
+    PitchSetpoint = pitchTarget;
+    YawSetpoint = yawTarget;
 }
