@@ -18,11 +18,11 @@ private:
     // Handles de tareas
     TaskHandle_t StabilityTaskHandle;
     TaskHandle_t HeightTaskHandle;
+    float currentHeight;
     
     // Métodos estáticos para las tareas
     static void StabilityControlTask(void* parameter);
     static void HeightControlTask(void* parameter);
-    
     // Puntero a la instancia para callbacks
     static DroneControlTasks* Instance;
     
@@ -38,6 +38,7 @@ public:
     // Métodos de control interno
     void ProcessStabilityControl();
     void ProcessHeightControl();
+    float GetCurrentHeight() const { return currentHeight; }
 };
 
 #endif

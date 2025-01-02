@@ -82,3 +82,49 @@ void MotorsController::StopMotors() {
     UpdateMotorSpeeds();
     ApplyMotorSpeeds();
 }
+// ... (código existente) ...
+
+void MotorsController::SetMotor1Speed(uint16_t speed) {
+    Motor1Speed = constrain(speed, 0, SpeedLimit);
+    ledcWrite(Motor1Pin, Motor1Speed);
+}
+
+void MotorsController::SetMotor2Speed(uint16_t speed) {
+    Motor2Speed = constrain(speed, 0, SpeedLimit);
+    ledcWrite(Motor2Pin, Motor2Speed);
+}
+
+void MotorsController::SetMotor3Speed(uint16_t speed) {
+    Motor3Speed = constrain(speed, 0, SpeedLimit);
+    ledcWrite(Motor3Pin, Motor3Speed);
+}
+
+void MotorsController::SetMotor4Speed(uint16_t speed) {
+    Motor4Speed = constrain(speed, 0, SpeedLimit);
+    ledcWrite(Motor4Pin, Motor4Speed);
+}
+
+void MotorsController::SetAllMotorsSpeeds(uint16_t speed) {
+    uint16_t constrainedSpeed = constrain(speed, 0, SpeedLimit);
+    Motor1Speed = constrainedSpeed;
+    Motor2Speed = constrainedSpeed;
+    Motor3Speed = constrainedSpeed;
+    Motor4Speed = constrainedSpeed;
+    
+    ledcWrite(Motor1Pin, Motor1Speed);
+    ledcWrite(Motor2Pin, Motor2Speed);
+    ledcWrite(Motor3Pin, Motor3Speed);
+    ledcWrite(Motor4Pin, Motor4Speed);
+}
+
+void MotorsController::SetIndividualMotorsSpeeds(uint16_t m1, uint16_t m2, uint16_t m3, uint16_t m4) {
+    Motor1Speed = constrain(m1, 0, SpeedLimit);
+    Motor2Speed = constrain(m2, 0, SpeedLimit);
+    Motor3Speed = constrain(m3, 0, SpeedLimit);
+    Motor4Speed = constrain(m4, 0, SpeedLimit);
+    
+    ledcWrite(Motor1Pin, Motor1Speed);
+    ledcWrite(Motor2Pin, Motor2Speed);
+    ledcWrite(Motor3Pin, Motor3Speed);
+    ledcWrite(Motor4Pin, Motor4Speed);
+}

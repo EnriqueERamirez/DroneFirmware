@@ -50,7 +50,14 @@ public:
     void SetPIDOutputs(float roll, float pitch, float yaw);
     void UpdateMotors();
     void StopMotors();
-    
+
+    // Setters
+    void SetMotor1Speed(uint16_t speed);
+    void SetMotor2Speed(uint16_t speed);
+    void SetMotor3Speed(uint16_t speed);
+    void SetMotor4Speed(uint16_t speed);
+    void SetAllMotorsSpeeds(uint16_t speed);
+    void SetIndividualMotorsSpeeds(uint16_t m1, uint16_t m2, uint16_t m3, uint16_t m4);
     // Getters
     uint16_t GetMotor1Speed() const { return Motor1Speed; }
     uint16_t GetMotor2Speed() const { return Motor2Speed; }

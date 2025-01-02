@@ -24,7 +24,7 @@ BatteryMonitor battery(1);  // Using default analog pin for battery monitoring
 DroneControlTasks* taskController = nullptr;
 
 // Constants
-const float MINIMUM_VOLTAGE = 3.7f;  // Minimum voltage threshold
+const float MINIMUM_VOLTAGE = 3.2f;  // Minimum voltage threshold
 
 // Test sequence states
 enum TestState {
@@ -41,93 +41,159 @@ TestState currentState = INIT;
 unsigned long stateTimer = 0;
 unsigned long flightTimer = 0;
 
+// Function to convert state to string for debugging
+String getStateName(TestState state) {
+    switch(state) {
+        case INIT: return "INIT";
+        case SENSOR_TEST: return "SENSOR_TEST";
+        case MOTOR_TEST: return "MOTOR_TEST";
+        case FLIGHT_PREP: return "FLIGHT_PREP";
+        case TEST_FLIGHT: return "TEST_FLIGHT";
+        case LANDING: return "LANDING";
+        case COMPLETED: return "COMPLETED";
+        default: return "UNKNOWN";
+    }
+}
 void setup() {
     delay(1000);
+    //disableCore0WDT();
     Serial.begin(115200);
+    delay(1000);  // Breve pausa para asegurar una inicialización estable
+    Serial.println("\n=== Drone System Initialization Starting ===");
+    Serial.printf("ESP32-S3 Free Heap: %d\n", ESP.getFreeHeap());
     Wire.setClock(400000);  // 400kHz I2C clock
+    Serial.println("I2C clock set to 400kHz");
     
     // Initialize LED controller and start initialization pattern
+    Serial.println("Initializing LED controller...");
     leds.Initialize();
     leds.RunStartupSequence();
     
     // Initialize IMU with calibration
+    Serial.println("Initializing IMU...");
     imu.Initialize();
-    Serial.println("Calibrating IMU...");
+    Serial.println("Starting IMU calibration...");
     imu.Calibrate();
     
     if (!imu.IsDeviceCalibrated()) {
-        Serial.println("IMU calibration failed");
+        Serial.println("ERROR: IMU calibration failed!");
         playFailureSequence();
-        while(1);
+        while(1) {
+            Serial.println("System halted due to IMU calibration failure");
+            delay(5000);
+        }
     }
+    Serial.println("IMU calibration successful");
     
     // Initialize distance sensors
+    Serial.println("Initializing distance sensors...");
     if (!sensors.Initialize()) {
-        Serial.println("Distance sensors initialization failed");
+        Serial.println("ERROR: Distance sensors initialization failed!");
         playFailureSequence();
-        while(1);
+        while(1) {
+            Serial.println("System halted due to sensor initialization failure");
+            delay(5000);
+        }
     }
+    Serial.println("Distance sensors initialized successfully");
     
     // Initialize remaining components
+    Serial.println("Initializing motors...");
     motors.Initialize();
+    Serial.println("Initializing battery monitor...");
     battery.Initialize();
     
     // Create and initialize task controller
+    Serial.println("Creating task controller...");
     taskController = new DroneControlTasks(imu, pidController, motors, distanceController);
     
-    Serial.println("System initialized, starting test sequence...");
+    Serial.println("=== System initialization complete ===");
+    Serial.println("Starting test sequence...");
     currentState = SENSOR_TEST;
 }
 
 void loop() {
     static uint16_t targetHeight = 100; // Target height in mm
+    static unsigned long lastDebugPrint = 0;
+    static unsigned long remainingTime = 0;  // Moved the declaration here
     
     // Update battery status first
     battery.Update();
+    float currentVoltage = battery.GetCurrentVoltage();
+    
+    // Print debug info every second
+    if (millis() - lastDebugPrint >= 1000) {
+        Serial.printf("Current State: %s, Battery: %.2fV\n", 
+                     getStateName(currentState).c_str(), 
+                     currentVoltage);
+        lastDebugPrint = millis();
+    }
     
     // Check for low voltage condition
-    if (battery.IsLowVoltage()) {
-        motors.StopMotors();
-        Serial.println("Low battery detected!");
-        playFailureSequence();
-        while(1);
-    }
+    //if (battery.IsLowVoltage()) {
+    //    Serial.printf("ERROR: Low battery detected! Voltage: %.2fV\n", currentVoltage);
+    //    motors.StopMotors();
+    //    playFailureSequence();
+    //    while(1) {
+    //        Serial.println("System halted due to low battery");
+    //        delay(5000);
+    //    }
+    //}
     
     switch (currentState) {
         case SENSOR_TEST:
+            Serial.println("Running sensor diagnostics...");
             if (performSensorTest()) {
+                Serial.println("Sensor tests passed successfully");
                 playSuccessSequence();
                 currentState = MOTOR_TEST;
             } else {
+                Serial.println("ERROR: Sensor tests failed!");
                 playFailureSequence();
-                while(1);
+                while(1) {
+                    Serial.println("System halted due to sensor test failure");
+                    delay(5000);
+                }
             }
             break;
             
         case MOTOR_TEST:
+            Serial.println("Starting motor test sequence...");
             if (performMotorTest()) {
+                Serial.println("Motor tests completed successfully");
                 playSuccessSequence();
                 currentState = FLIGHT_PREP;
                 stateTimer = millis();
             } else {
+                Serial.println("ERROR: Motor tests failed!");
                 playFailureSequence();
-                while(1);
+                while(1) {
+                    Serial.println("System halted due to motor test failure");
+                    delay(5000);
+                }
             }
             break;
             
         case FLIGHT_PREP:
-            if (millis() - stateTimer >= 5000) { // 5 second wait
+            remainingTime = (millis() - stateTimer >= 5000) ? 0 : (5000 - (millis() - stateTimer));
+            if (remainingTime == 0) {
+                Serial.println("Flight preparation complete, initiating takeoff sequence");
                 playTakeoffWarning();
                 currentState = TEST_FLIGHT;
                 flightTimer = millis();
                 taskController->Initialize();
+            } else {
+                Serial.printf("Flight preparation in progress - Time remaining: %d seconds\n", 
+                            remainingTime / 1000);
             }
-            break;
-            
+            break; 
         case TEST_FLIGHT:
-            if (millis() - flightTimer <= 30000) { // 30 second flight
+            Serial.println("Starting test flight sequence...");
+            if (millis() - flightTimer <= 30000) {
+                Serial.printf("Flight in progress - Target height: %d mm\n", targetHeight);
                 distanceController.SetHeightTarget(targetHeight);
             } else {
+                Serial.println("Flight time complete, initiating landing sequence");
                 currentState = LANDING;
             }
             break;
@@ -135,8 +201,10 @@ void loop() {
         case LANDING:
             if (targetHeight > 0) {
                 targetHeight = max(0, targetHeight - 2);  // Gradual descent
+                Serial.printf("Landing in progress - Current target height: %d mm\n", targetHeight);
                 distanceController.SetHeightTarget(targetHeight);
             } else {
+                Serial.println("Landing complete, stopping motors");
                 taskController->StopTasks();
                 motors.StopMotors();
                 currentState = COMPLETED;
@@ -145,6 +213,7 @@ void loop() {
             break;
             
         case COMPLETED:
+            // No need for continuous printing in completed state
             leds.UpdateRandomPattern();
             break;
     }
@@ -155,29 +224,84 @@ void loop() {
 }
 
 bool performSensorTest() {
-    // Comprehensive sensor check
-    return sensors.PerformDiagnostics() && 
-           imu.IsDeviceCalibrated() && 
-           battery.GetCurrentVoltage() > MINIMUM_VOLTAGE;
+    Serial.println("Testing sensors:");
+    
+    bool sensorsDiagnostic = sensors.PerformDiagnostics();
+    Serial.printf("- Distance sensors diagnostic: %s\n", sensorsDiagnostic ? "PASS" : "FAIL");
+    
+    bool imuCalibrated = imu.IsDeviceCalibrated();
+    Serial.printf("- IMU calibration check: %s\n", imuCalibrated ? "PASS" : "FAIL");
+    
+    float voltage = battery.GetCurrentVoltage();
+    bool voltageOk = voltage > MINIMUM_VOLTAGE;
+    Serial.printf("- Battery voltage (%.2fV): %s\n", voltage, voltageOk ? "PASS" : "FAIL");
+    
+    return sensorsDiagnostic && imuCalibrated && voltageOk;
 }
 
 bool performMotorTest() {
-    const uint16_t testPower = 100;
-    const unsigned long testDuration = 1000;
+    const uint16_t MAX_TEST_POWER = 375;  // 50% de la capacidad (SpeedLimit = 750)
+    const uint16_t POWER_STEP = 25;       // Incremento gradual
+    const unsigned long STEP_DURATION = 500; // Duración de cada paso en ms
     
-    // Test each motor sequentially
-    motors.SetThrottle(testPower);
+    Serial.println("Starting progressive motor test...");
     
-    for (int i = 0; i < 4; i++) {
-        motors.UpdateMotors();
-        delay(testDuration);
+    // Test cada motor individualmente
+    for (int motor = 0; motor < 4; motor++) {
+        Serial.printf("\nTesting motor %d with progressive power:\n", motor + 1);
+        
+        // Incremento progresivo de potencia
+        for (uint16_t power = 0; power <= MAX_TEST_POWER; power += POWER_STEP) {
+            Serial.printf("Motor %d at %d%% power\n", motor + 1, (power * 100) / 750);
+            
+            // Resetear todos los motores
+            motors.SetThrottle(0);
+            motors.SetPIDOutputs(0, 0, 0);
+            
+            // Aplicar potencia según el motor
+            switch(motor) {
+                case 0: // Motor frontal derecho
+                    motors.SetPIDOutputs(-power, power, 0);
+                    break;
+                case 1: // Motor frontal izquierdo
+                    motors.SetPIDOutputs(power, power, 0);
+                    break;
+                case 2: // Motor trasero izquierdo
+                    motors.SetPIDOutputs(power, -power, 0);
+                    break;
+                case 3: // Motor trasero derecho
+                    motors.SetPIDOutputs(-power, -power, 0);
+                    break;
+            }
+            
+            motors.SetThrottle(power);
+            motors.UpdateMotors();
+            delay(STEP_DURATION);
+        }
+        
+        // Apagar el motor y esperar
         motors.SetThrottle(0);
+        motors.SetPIDOutputs(0, 0, 0);
         motors.UpdateMotors();
-        delay(500);
+        delay(1000);
     }
     
+    // Test final con todos los motores simultáneamente
+    Serial.println("\nTesting all motors simultaneously...");
+    for (uint16_t power = 0; power <= MAX_TEST_POWER; power += POWER_STEP) {
+        Serial.printf("All motors at %d%% power\n", (power * 100) / 750);
+        motors.SetThrottle(power);
+        motors.SetPIDOutputs(0, 0, 0);
+        motors.UpdateMotors();
+        delay(STEP_DURATION);
+    }
+    
+    // Apagar todos los motores
+    Serial.println("Motor test sequence completed");
+    motors.StopMotors();
     return true;
 }
+
 
 void playSuccessSequence() {
     buzzer.PlayNote(buzzer.GetNoteC5(), buzzer.GetQuarterNote());
