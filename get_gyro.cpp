@@ -4,7 +4,7 @@
 
 MPU6050 imu;
 MotorsController motors(39, 4, 14, 47);
-const uint16_t SPEED = 650;
+const uint16_t SPEED = 400;
 
 unsigned long lastPrint = 0;
 const unsigned long PRINT_INTERVAL = 0.5;
@@ -27,6 +27,8 @@ void setup() {
     motors.SetMotor2Speed(SPEED);
     delay(5000);
     motors.SetMotor3Speed(SPEED);
+    delay(5000);
+    motors.SetMotor4Speed(SPEED);
     
     Serial.println("GyroX,GyroY,GyroZ,AngleX,AngleY,AngleZ");
 }

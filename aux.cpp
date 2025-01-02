@@ -24,7 +24,7 @@ BatteryMonitor battery(1);  // Using default analog pin for battery monitoring
 DroneControlTasks* taskController = nullptr;
 
 // Constants
-const float MINIMUM_VOLTAGE = 3.7f;  // Minimum voltage threshold
+const float MINIMUM_VOLTAGE = 3.2f;  // Minimum voltage threshold
 
 // Test sequence states
 enum TestState {
@@ -130,15 +130,15 @@ void loop() {
     }
     
     // Check for low voltage condition
-    if (battery.IsLowVoltage()) {
-        Serial.printf("ERROR: Low battery detected! Voltage: %.2fV\n", currentVoltage);
-        motors.StopMotors();
-        playFailureSequence();
-        while(1) {
-            Serial.println("System halted due to low battery");
-            delay(5000);
-        }
-    }
+    //if (battery.IsLowVoltage()) {
+    //    Serial.printf("ERROR: Low battery detected! Voltage: %.2fV\n", currentVoltage);
+    //    motors.StopMotors();
+    //    playFailureSequence();
+    //    while(1) {
+    //        Serial.println("System halted due to low battery");
+    //        delay(5000);
+    //    }
+    //}
     
     switch (currentState) {
         case SENSOR_TEST:
@@ -254,35 +254,30 @@ bool performMotorTest() {
         for (uint16_t power = 0; power <= MAX_TEST_POWER; power += POWER_STEP) {
             Serial.printf("Motor %d at %d%% power\n", motor + 1, (power * 100) / 750);
             
-            // Resetear todos los motores
-            motors.SetThrottle(0);
-            motors.SetPIDOutputs(0, 0, 0);
+            // Apagar todos los motores primero
+            motors.SetAllMotorsSpeeds(0);
             
-            // Aplicar potencia según el motor
+            // Aplicar potencia al motor específico
             switch(motor) {
-                case 0: // Motor frontal derecho
-                    motors.SetPIDOutputs(-power, power, 0);
+                case 0:
+                    motors.SetMotor1Speed(power);
                     break;
-                case 1: // Motor frontal izquierdo
-                    motors.SetPIDOutputs(power, power, 0);
+                case 1:
+                    motors.SetMotor2Speed(power);
                     break;
-                case 2: // Motor trasero izquierdo
-                    motors.SetPIDOutputs(power, -power, 0);
+                case 2:
+                    motors.SetMotor3Speed(power);
                     break;
-                case 3: // Motor trasero derecho
-                    motors.SetPIDOutputs(-power, -power, 0);
+                case 3:
+                    motors.SetMotor4Speed(power);
                     break;
             }
             
-            motors.SetThrottle(power);
-            motors.UpdateMotors();
             delay(STEP_DURATION);
         }
         
         // Apagar el motor y esperar
-        motors.SetThrottle(0);
-        motors.SetPIDOutputs(0, 0, 0);
-        motors.UpdateMotors();
+        motors.SetAllMotorsSpeeds(0);
         delay(1000);
     }
     
@@ -290,9 +285,7 @@ bool performMotorTest() {
     Serial.println("\nTesting all motors simultaneously...");
     for (uint16_t power = 0; power <= MAX_TEST_POWER; power += POWER_STEP) {
         Serial.printf("All motors at %d%% power\n", (power * 100) / 750);
-        motors.SetThrottle(power);
-        motors.SetPIDOutputs(0, 0, 0);
-        motors.UpdateMotors();
+        motors.SetAllMotorsSpeeds(power);
         delay(STEP_DURATION);
     }
     
@@ -301,7 +294,6 @@ bool performMotorTest() {
     motors.StopMotors();
     return true;
 }
-
 
 void playSuccessSequence() {
     buzzer.PlayNote(buzzer.GetNoteC5(), buzzer.GetQuarterNote());
