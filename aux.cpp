@@ -25,6 +25,9 @@ DroneControlTasks* taskController = nullptr;
 
 // Constants
 const float MINIMUM_VOLTAGE = 3.2f;  // Minimum voltage threshold
+const uint16_t INITIAL_HEIGHT = 100;  // Initial target height in millimeters
+const uint16_t HEIGHT_INCREMENT = 10; // Height change increment in millimeters
+const uint16_t MAX_HEIGHT = 500;     // Maximum allowed height in millimeters
 
 // Test sequence states
 enum TestState {
@@ -105,7 +108,7 @@ void setup() {
     
     // Create and initialize task controller
     Serial.println("Creating task controller...");
-    taskController = new DroneControlTasks(imu, pidController, motors, distanceController);
+    taskController = new DroneControlTasks(imu, pidController, motors, distanceController, sensors);
     
     Serial.println("=== System initialization complete ===");
     Serial.println("Starting test sequence...");
@@ -113,10 +116,10 @@ void setup() {
 }
 
 void loop() {
-    static uint16_t targetHeight = 100; // Target height in mm
+    static uint16_t targetHeight = 0; // Target height in mm
     static unsigned long lastDebugPrint = 0;
     static unsigned long remainingTime = 0;  // Moved the declaration here
-    
+    static unsigned long heightUpdateTimer = 0;
     // Update battery status first
     battery.Update();
     float currentVoltage = battery.GetCurrentVoltage();
@@ -188,10 +191,36 @@ void loop() {
             }
             break; 
         case TEST_FLIGHT:
-            Serial.println("Starting test flight sequence...");
-            if (millis() - flightTimer <= 30000) {
-                Serial.printf("Flight in progress - Target height: %d mm\n", targetHeight);
-                distanceController.SetHeightTarget(targetHeight);
+            if (millis() - flightTimer <= 30000) {  // 30-second flight test
+                // Initial takeoff
+                if (targetHeight < INITIAL_HEIGHT) {
+                    targetHeight = INITIAL_HEIGHT;
+                    taskController->SetTargetHeight(targetHeight);
+                    Serial.printf("Taking off - Setting height to %d mm\n", targetHeight);
+                }
+                
+                // Update height every 5 seconds for testing
+                if (millis() - heightUpdateTimer >= 5000) {
+                    // Optional: Add height variations during flight for testing
+                    if (targetHeight == INITIAL_HEIGHT) {
+                        targetHeight += HEIGHT_INCREMENT;
+                    } else {
+                        targetHeight = INITIAL_HEIGHT;
+                    }
+                    
+                    // Ensure we don't exceed maximum height
+                    targetHeight = min(targetHeight, MAX_HEIGHT);
+                    taskController->SetTargetHeight(targetHeight);
+                    Serial.printf("Updating flight height - New target: %d mm\n", targetHeight);
+                    heightUpdateTimer = millis();
+                }
+                
+                // Debug output
+                if (millis() - lastDebugPrint >= 1000) {
+                    Serial.printf("Flight in progress - Target height: %d mm, Current height: %.2f mm\n",
+                                targetHeight, taskController->GetCurrentHeight());
+                    lastDebugPrint = millis();
+                }
             } else {
                 Serial.println("Flight time complete, initiating landing sequence");
                 currentState = LANDING;
@@ -200,9 +229,14 @@ void loop() {
             
         case LANDING:
             if (targetHeight > 0) {
-                targetHeight = max(0, targetHeight - 2);  // Gradual descent
-                Serial.printf("Landing in progress - Current target height: %d mm\n", targetHeight);
-                distanceController.SetHeightTarget(targetHeight);
+                targetHeight = max(0, targetHeight - 5);  // More gradual descent
+                taskController->SetTargetHeight(targetHeight);
+                
+                if (millis() - lastDebugPrint >= 1000) {
+                    Serial.printf("Landing in progress - Target: %d mm, Current: %.2f mm\n",
+                                targetHeight, taskController->GetCurrentHeight());
+                    lastDebugPrint = millis();
+                }
             } else {
                 Serial.println("Landing complete, stopping motors");
                 taskController->StopTasks();

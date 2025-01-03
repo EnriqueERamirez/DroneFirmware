@@ -2,7 +2,7 @@
 #include "MotorsController.h"
 
 MotorsController motors(39, 4, 14, 47);
-const uint16_t SPEED = 600; // 80% de 750
+const uint16_t SPEED = 100; // 80% de 750
 
 void setup() {
     Serial.begin(115200);
