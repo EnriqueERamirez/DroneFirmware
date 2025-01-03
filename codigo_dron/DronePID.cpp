@@ -117,3 +117,6 @@ void DronePID::SetSetpoints(float rollTarget, float pitchTarget, float yawTarget
     PitchSetpoint = pitchTarget;
     YawSetpoint = yawTarget;
 }
+void DronePID::SetAltitudeSetpoint(float target) {
+    AltitudeSetpoint = target;
+}

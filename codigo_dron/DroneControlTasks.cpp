@@ -3,13 +3,15 @@
 DroneControlTasks* DroneControlTasks::Instance = nullptr;
 
 DroneControlTasks::DroneControlTasks(MPU6050& imu, 
-                                   DronePID& pidController, 
-                                   MotorsController& motors,
-                                   DistanceController& distanceSensor)
+                     DronePID& pidController, 
+                     MotorsController& motors,
+                     DistanceController& distanceSensor,
+                     VL53L0XSensorArray& sensorArray)
     : Imu(imu),
       PidController(pidController),
       Motors(motors),
       DistanceSensor(distanceSensor),
+      SensorArray(sensorArray),
       StabilityTaskHandle(nullptr),
       HeightTaskHandle(nullptr) {
     Instance = this;
@@ -132,8 +134,24 @@ void DroneControlTasks::ProcessStabilityControl() {
 
 void DroneControlTasks::ProcessHeightControl() {
     static unsigned long lastDebugOutput = 0;
-    const unsigned long DEBUG_INTERVAL = 1000; // Print debug every 1 second
+    const unsigned long DEBUG_INTERVAL = 1000;
     
+    // Update all sensor readings
+    SensorArray.Update();
+    DistanceSensor.SetSensorDistances(SensorArray);
+    
+    // Get current height from bottom sensor
+    float currentHeight = DistanceSensor.GetCurrentHeight();
+    
+    // Update PID controller with current height
+    PidController.SetAltitude(currentHeight);
+    PidController.UpdateAltitudePID();
+    
+    // Get and apply height adjustment
+    float heightAdjustment = PidController.GetAltitudeOutput();
+    DistanceSensor.SetHeightOutput(heightAdjustment);
+    
+    // Process height adjustments and collision avoidance
     DistanceSensor.UpdateHeightControl();
     DistanceSensor.UpdateCollisionAvoidance();
     DistanceSensor.ProcessHeightAdjustment();
@@ -143,27 +161,18 @@ void DroneControlTasks::ProcessHeightControl() {
     // Debug output every second
     unsigned long currentMillis = millis();
     if (currentMillis - lastDebugOutput >= DEBUG_INTERVAL) {
-        Serial.print("Throttle: ");
+        Serial.print("Current Height: ");
+        Serial.print(currentHeight);
+        Serial.print("mm Target Height: ");
+        Serial.print(DistanceSensor.GetHeightTarget());
+        Serial.print("mm Throttle: ");
         Serial.println(DistanceSensor.GetThrottle());
         
         if (DistanceSensor.IsCollisionDetected()) {
-            Serial.println("Collision avoidance active!");
+            Serial.println("Warning: Collision avoidance active!");
         }
         
         lastDebugOutput = currentMillis;
-    }
-    
-    if (DistanceSensor.IsCollisionDetected()) {
-        float rollTarget = DistanceSensor.GetRollTarget();
-        float pitchTarget = DistanceSensor.GetPitchTarget();
-        
-        PidController.SetSetpoints(rollTarget, pitchTarget, 0.0f);
-        
-        // Debug inmediato cuando cambian los setpoints
-        Serial.print("Setting new PID setpoints - Roll: ");
-        Serial.print(rollTarget);
-        Serial.print(", Pitch: ");
-        Serial.println(pitchTarget);
     }
 }
 
@@ -210,4 +219,21 @@ void DroneControlTasks::HeightControlTask(void* parameter) {
         
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
+}
+void DroneControlTasks::SetTargetHeight(float heightMm) {
+    if (heightMm < 0) {
+        Serial.println("Warning: Negative height target requested, setting to 0");
+        heightMm = 0;
+    }
+    
+    // Establecer límite máximo de altura por seguridad (ejemplo: 2000mm = 2m)
+    const float MAX_HEIGHT_MM = 2000.0f;
+    if (heightMm > MAX_HEIGHT_MM) {
+        Serial.printf("Warning: Height target exceeds maximum allowed (%0.2f mm), limiting to %0.2f mm\n", 
+                     heightMm, MAX_HEIGHT_MM);
+        heightMm = MAX_HEIGHT_MM;
+    }
+    
+    DistanceSensor.SetHeightTarget(heightMm);
+    Serial.printf("New target height set: %0.2f mm\n", heightMm);
 }

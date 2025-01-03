@@ -8,15 +8,27 @@ DistanceController::DistanceController()
       HeightOutput(0), HeightTarget(0) {  // Inicializado HeightTarget
 }
 
-void DistanceController::SetSensorDistances(uint16_t upper, uint16_t lower, 
-                                          uint16_t left, uint16_t right, 
-                                          uint16_t front, uint16_t back) {
-    UpperSensorDistance = upper;
-    LowerSensorDistance = lower;
-    LeftSensorDistance = left;
-    RightSensorDistance = right;
-    FrontSensorDistance = front;
-    BackSensorDistance = back;
+void DistanceController::SetSensorDistances(VL53L0XSensorArray& sensorArray) {
+    UpperSensorDistance = sensorArray.GetDistance(VL53L0XSensorArray::TOP);
+    LowerSensorDistance = sensorArray.GetDistance(VL53L0XSensorArray::BOTTOM);
+    LeftSensorDistance = sensorArray.GetDistance(VL53L0XSensorArray::LEFT);
+    RightSensorDistance = sensorArray.GetDistance(VL53L0XSensorArray::RIGHT);
+    FrontSensorDistance = sensorArray.GetDistance(VL53L0XSensorArray::FRONT);
+    BackSensorDistance = sensorArray.GetDistance(VL53L0XSensorArray::BACK);
+    
+    // For debugging purposes
+    static unsigned long lastDebugOutput = 0;
+    const unsigned long DEBUG_INTERVAL = 1000;
+    
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastDebugOutput >= DEBUG_INTERVAL) {
+        Serial.println("Sensor Distances (mm):");
+        Serial.printf("Upper: %d, Lower: %d\n", UpperSensorDistance, LowerSensorDistance);
+        Serial.printf("Left: %d, Right: %d\n", LeftSensorDistance, RightSensorDistance);
+        Serial.printf("Front: %d, Back: %d\n", FrontSensorDistance, BackSensorDistance);
+        
+        lastDebugOutput = currentMillis;
+    }
 }
 
 void DistanceController::UpdateHeightControl() {
@@ -24,6 +36,7 @@ void DistanceController::UpdateHeightControl() {
         // Descenso de emergencia si se detecta obstáculo arriba
         Throttle -= EMERGENCY_DESCENT_RATE;
     }
+    
 }
 
 void DistanceController::UpdateCollisionAvoidance() {

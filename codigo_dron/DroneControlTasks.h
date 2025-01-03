@@ -6,39 +6,36 @@
 #include "DronePID.h"
 #include "MotorsController.h"
 #include "DistanceController.h"
+#include "VL53L0XSensorArray.h"
 
 class DroneControlTasks {
 private:
-    // Componentes del sistema
     MPU6050& Imu;
     DronePID& PidController;
     MotorsController& Motors;
     DistanceController& DistanceSensor;
+    VL53L0XSensorArray& SensorArray;
     
-    // Handles de tareas
     TaskHandle_t StabilityTaskHandle;
     TaskHandle_t HeightTaskHandle;
-    float currentHeight;
     
-    // Métodos estáticos para las tareas
     static void StabilityControlTask(void* parameter);
     static void HeightControlTask(void* parameter);
-    // Puntero a la instancia para callbacks
     static DroneControlTasks* Instance;
-    
+
 public:
     DroneControlTasks(MPU6050& imu, 
                      DronePID& pidController, 
                      MotorsController& motors,
-                     DistanceController& distanceSensor);
+                     DistanceController& distanceSensor,
+                     VL53L0XSensorArray& sensorArray);
     
     void Initialize();
     void StopTasks();
-    
-    // Métodos de control interno
     void ProcessStabilityControl();
     void ProcessHeightControl();
-    float GetCurrentHeight() const { return currentHeight; }
+    void SetTargetHeight(float heightMm);
+    float GetCurrentHeight() const { return DistanceSensor.GetCurrentHeight(); }
 };
 
 #endif

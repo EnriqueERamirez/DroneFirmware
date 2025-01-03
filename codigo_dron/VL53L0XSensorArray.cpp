@@ -150,3 +150,20 @@ bool VL53L0XSensorArray::PerformDiagnostics() {
     Serial.println("=== Diagnostics Complete ===\n");
     return criticalSensorsWorking;
 }
+uint16_t VL53L0XSensorArray::GetDistance(SensorPosition position) const {
+    if (static_cast<uint8_t>(position) >= SensorCount) {
+        Serial.printf("Error: Invalid sensor position %d\n", position);
+        return MAX_DISTANCE;
+    }
+    
+    return SensorReadings[static_cast<uint8_t>(position)].Distance;
+}
+
+bool VL53L0XSensorArray::IsSensorValid(SensorPosition position) const {
+    if (static_cast<uint8_t>(position) >= SensorCount) {
+        Serial.printf("Error: Invalid sensor position %d\n", position);
+        return false;
+    }
+    
+    return SensorReadings[static_cast<uint8_t>(position)].IsValid;
+}

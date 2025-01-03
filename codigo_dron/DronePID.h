@@ -106,6 +106,7 @@ public:
     void SetGyros(float gyroX, float gyroY, float gyroZ);
     void SetAltitude(float altitude);
     void SetSetpoints(float rollTarget, float pitchTarget, float yawTarget);
+    void SetAltitudeSetpoint(float target);
 };
 
 #endif
