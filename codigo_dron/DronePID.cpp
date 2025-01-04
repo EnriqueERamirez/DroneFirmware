@@ -21,7 +21,7 @@ DronePID::DronePID() :
     PIDLimit1Altitude(200.0f), PIDLimit2Altitude(1000.0f),
 
     // Altitud
-    AltitudeSetpoint(200.0f)
+    AltitudeSetpoint(10.0f)
 {
     // Inicialización de variables
     PitchI = RollI = PitchIV = RollIV = YawIV = AltitudeI = 0.0f;
