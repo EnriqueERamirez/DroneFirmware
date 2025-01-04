@@ -144,7 +144,8 @@ void DroneControlTasks::ProcessHeightControl() {
     float currentHeight = DistanceSensor.GetCurrentHeight();
     
     // Update PID controller with current height
-    PidController.SetAltitude(currentHeight);
+    PidController.SetAltitudeSetpoint(currentHeight);
+    PidController.SetAltitude(SensorArray.GetDistance(VL53L0XSensorArray::BOTTOM));
     PidController.UpdateAltitudePID();
     
     // Get and apply height adjustment
@@ -153,7 +154,7 @@ void DroneControlTasks::ProcessHeightControl() {
     
     // Process height adjustments and collision avoidance
     DistanceSensor.UpdateHeightControl();
-    DistanceSensor.UpdateCollisionAvoidance();
+    //DistanceSensor.UpdateCollisionAvoidance();
     DistanceSensor.ProcessHeightAdjustment();
     
     Motors.SetThrottle(DistanceSensor.GetThrottle());
