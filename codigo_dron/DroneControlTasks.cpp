@@ -15,26 +15,22 @@ DroneControlTasks::DroneControlTasks(MPU6050& imu,
       StabilityTaskHandle(nullptr),
       HeightTaskHandle(nullptr) {
     Instance = this;
-    Serial.begin(115200);  // Initialize Serial with high baud rate
     Serial.println("DroneControlTasks initialized");
 }
 
 void DroneControlTasks::Initialize() {
     Serial.println("Starting task initialization...");
+    const uint32_t STABILITY_STACK_SIZE = 4096;
+    const uint32_t HEIGHT_STACK_SIZE = 4096;
     
-    // Configuración específica para ESP32-S3
-    const uint32_t STABILITY_STACK_SIZE = 4096;  // Ajustado para ESP32-S3
-    const uint32_t HEIGHT_STACK_SIZE = 4096;     // Ajustado para ESP32-S3
-    
-    // Configuración de la tarea de estabilidad
     BaseType_t stabilityTaskCreated = xTaskCreatePinnedToCore(
         StabilityControlTask,
         "StabilityControl",
         STABILITY_STACK_SIZE,
         nullptr,
-        2,  // Prioridad ajustada para ESP32-S3
+        2, 
         &StabilityTaskHandle,
-        0    // Core 0
+        0
     );
 
     if (stabilityTaskCreated != pdPASS) {
@@ -69,10 +65,6 @@ void DroneControlTasks::Initialize() {
         return;
     }
     Serial.println("Height control task created successfully on Core 1");
-    
-    // Monitoreo de memoria inicial
-    Serial.printf("Initial free heap: %d\n", ESP.getFreeHeap());
-    Serial.printf("Largest free block: %d\n", ESP.getMaxAllocHeap());
 }
 
 void DroneControlTasks::StopTasks() {
@@ -226,8 +218,6 @@ void DroneControlTasks::SetTargetHeight(float heightMm) {
         Serial.println("Warning: Negative height target requested, setting to 0");
         heightMm = 0;
     }
-    
-    // Establecer límite máximo de altura por seguridad (ejemplo: 2000mm = 2m)
     const float MAX_HEIGHT_MM = 2000.0f;
     if (heightMm > MAX_HEIGHT_MM) {
         Serial.printf("Warning: Height target exceeds maximum allowed (%0.2f mm), limiting to %0.2f mm\n", 

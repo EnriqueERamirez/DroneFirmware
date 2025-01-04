@@ -274,9 +274,9 @@ bool performSensorTest() {
 }
 
 bool performMotorTest() {
-    const uint16_t MAX_TEST_POWER = 100;  // 50% de la capacidad (SpeedLimit = 750)
-    const uint16_t POWER_STEP = 25;       // Incremento gradual
-    const unsigned long STEP_DURATION = 500; // Duración de cada paso en ms
+    const uint16_t MAX_TEST_POWER = 100; 
+    const uint16_t POWER_STEP = 25;    
+    const unsigned long STEP_DURATION = 500;
     
     Serial.println("Starting progressive motor test...");
     
@@ -314,8 +314,6 @@ bool performMotorTest() {
         motors.SetAllMotorsSpeeds(0);
         delay(1000);
     }
-    
-    // Test final con todos los motores simultáneamente
     Serial.println("\nTesting all motors simultaneously...");
     for (uint16_t power = 0; power <= MAX_TEST_POWER; power += POWER_STEP) {
         Serial.printf("All motors at %d%% power\n", (power * 100) / 750);
