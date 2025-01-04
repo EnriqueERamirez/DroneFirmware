@@ -8,6 +8,19 @@ private:
     // PWM Configuration
     static const uint32_t PWM_FREQUENCY = 2000;
     static const uint8_t PWM_RESOLUTION = 10;
+
+    // Variables para el suavizado
+    uint16_t TargetMotor1Speed;
+    uint16_t TargetMotor2Speed;
+    uint16_t TargetMotor3Speed;
+    uint16_t TargetMotor4Speed;
+    
+    // Factor de suavizado (ajustable entre 0.0 y 1.0)
+    float SmoothingFactor;
+    
+    // Métodos de suavizado
+    uint16_t ApplyLogarithmicSmoothing(uint16_t current, uint16_t target);
+    uint16_t ApplyExponentialSmoothing(uint16_t current, uint16_t target);
     
     // Motor pins
     uint8_t Motor1Pin;
