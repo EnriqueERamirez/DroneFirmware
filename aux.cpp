@@ -25,7 +25,7 @@ DroneControlTasks* taskController = nullptr;
 
 // Constants
 const float MINIMUM_VOLTAGE = 3.2f;  // Minimum voltage threshold
-const uint16_t INITIAL_HEIGHT = 100;  // Initial target height in millimeters
+const uint16_t INITIAL_HEIGHT = 250;  // Initial target height in millimeters
 const uint16_t HEIGHT_INCREMENT = 10; // Height change increment in millimeters
 const uint16_t MAX_HEIGHT = 500;     // Maximum allowed height in millimeters
 
@@ -274,7 +274,7 @@ bool performSensorTest() {
 }
 
 bool performMotorTest() {
-    const uint16_t MAX_TEST_POWER = 375;  // 50% de la capacidad (SpeedLimit = 750)
+    const uint16_t MAX_TEST_POWER = 100;  // 50% de la capacidad (SpeedLimit = 750)
     const uint16_t POWER_STEP = 25;       // Incremento gradual
     const unsigned long STEP_DURATION = 500; // Duración de cada paso en ms
     
